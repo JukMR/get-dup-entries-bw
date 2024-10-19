@@ -85,8 +85,8 @@ def main() -> None:
 
     print(f"The repeated elements are: {repeated}")
 
-    # for item in repeated:
-    #     print(f"key: {item} ")
+    for item in repeated:
+        print(item)
 
 
 if __name__ == "__main__":
