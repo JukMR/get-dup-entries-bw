@@ -83,6 +83,8 @@ def main() -> None:
     print(f"Found {len(unique)} unique elements.")
     print(f"Found {len(repeated)} repeated elements.")
 
+    print(f"The repeated elements are: {repeated}")
+
     # for item in repeated:
     #     print(f"key: {item} ")
 
