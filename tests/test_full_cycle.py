@@ -5,7 +5,7 @@ from get_dup_keys import BitwardenItem, get_unique_and_repeated, parse_raw_items
 
 @fixture
 def item_mock() -> list[dict]:
-    item_mock = [
+    items = [
         {
             "passwordHistory": None,
             "revisionDate": "2022-08-15T00:18:49.546Z",
@@ -61,7 +61,7 @@ def item_mock() -> list[dict]:
             "collectionIds": None,
         },
     ]
-    return item_mock
+    return items
 
 
 def test_parsing_from_raw_item(item_mock) -> None:
