@@ -1,9 +1,27 @@
 import json
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any, Literal, TypeAlias
 
-BitwardenJsonItems: TypeAlias = dict[str, Any]
+import pydantic
+
+BitwardenJsonItems: TypeAlias = dict[
+    Literal["username"] | Literal["password"] | Literal["uris"], Any
+]
 BitwardenJsonExportFormat: TypeAlias = dict[str, BitwardenJsonItems | Any]
+
+
+class BitwardenItem(pydantic.BaseModel):
+    username: str | None
+    password: str | None
+    uris: tuple[str, ...] | None
+
+    def __str__(self) -> str:
+        """Custom method for displaying class"""
+        output_str = ""
+        output_str += f"uris: {self.uris}" + "\n"
+        output_str += f"username: {self.username}" + "\n"
+        output_str += f"password: {self.password}" + "\n"
+        return output_str
 
 
 def get_latest_jsonfile_from_folder(folder: Path) -> Path:
@@ -34,31 +52,26 @@ def get_latest_export_keys_from_bw_exports_folder() -> BitwardenJsonExportFormat
     return items
 
 
-def get_unique_elements_for_item(item: BitwardenJsonItems) -> tuple | None:
-    try:
-        login_item = item["login"]
-    except KeyError:
-        # print(f"This item seems to be a card {item}. Skipping it")
-        return None
+def parsed_bitwarden_item(item: BitwardenJsonItems) -> BitwardenItem:
+    username = item["username"]
+    password = item["password"]
+    uris = item["uris"]
 
-    username = login_item["username"]
-    password = login_item["password"]
-    uris = login_item["uris"]
     if len(uris) == 0:
         # print(f"Empty uris in {item} object")
-        return None, username, password
+        return BitwardenItem(uris=None, username=username, password=password)
 
     only_uris = (item["uri"] for item in uris)
     uris_tupled: tuple = tuple(sorted(only_uris))
 
-    return uris_tupled, username, password
+    return BitwardenItem(uris=uris_tupled, username=username, password=password)
 
 
 def get_unique_and_repeated(
-    parsed_items: list[tuple],
-) -> tuple[list[tuple], list[tuple]]:
-    unique: list[tuple] = []
-    repeated: list[tuple] = []
+    parsed_items: list[BitwardenItem],
+) -> tuple[list[BitwardenItem], list[BitwardenItem]]:
+    unique: list[BitwardenItem] = []
+    repeated: list[BitwardenItem] = []
 
     for elem in parsed_items:
         if elem in unique:
@@ -69,22 +82,37 @@ def get_unique_and_repeated(
     return unique, repeated
 
 
-def main() -> None:
-    bw_export_file_items: BitwardenJsonExportFormat = get_latest_export_keys_from_bw_exports_folder()
-    parsed_items: list[tuple] = []
-    for it in bw_export_file_items:
-        elem = get_unique_elements_for_item(it)
-        if elem is None:
+def parse_raw_items(bw_export_items) -> list[BitwardenItem]:
+    parsed_items: list[BitwardenItem] = []
+
+    for it in bw_export_items:
+        if "login" not in it:
+            # Only process item elements, skip everything else
             continue
+
+        login_item = it["login"]
+        elem: BitwardenItem = parsed_bitwarden_item(login_item)
 
         parsed_items.append(elem)
 
+    return parsed_items
+
+
+def main() -> None:
+    bw_export_file_items: BitwardenJsonExportFormat = (
+        get_latest_export_keys_from_bw_exports_folder()
+    )
+
+    parsed_items: list[BitwardenItem] = parse_raw_items(
+        bw_export_items=bw_export_file_items
+    )
+    unique: list[BitwardenItem]
+    repeated: list[BitwardenItem]
     unique, repeated = get_unique_and_repeated(parsed_items=parsed_items)
     print(f"Found {len(unique)} unique elements.")
     print(f"Found {len(repeated)} repeated elements.")
 
-    print(f"The repeated elements are: {repeated}")
-
+    print("The repeated elements are:")
     for item in repeated:
         print(item)
 
