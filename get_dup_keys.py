@@ -1,8 +1,12 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any, Generator, Literal, TypeAlias
 
 import pydantic
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 BitwardenJsonItems: TypeAlias = dict[Literal["username"] | Literal["password"] | Literal["uris"], Any]
 BitwardenJsonExportFormat: TypeAlias = list[dict[Literal["login"] | Any, BitwardenJsonItems | Any]]
@@ -96,12 +100,12 @@ def parse_raw_items(bw_export_items) -> list[BitwardenItem]:
 
 
 def print_results(unique: list[BitwardenItem], repeated: list[BitwardenItem]) -> None:
-    print(f"Found {len(unique)} unique elements.")
-    print(f"Found {len(repeated)} repeated elements.")
+    logging.info("Found %s unique elements.", len(unique))
+    logging.info("Found %s repeated elements.", len(repeated))
 
-    print("The repeated elements are:")
+    logging.info("The repeated elements are:")
     for item in repeated:
-        print(item)
+        logging.info(item)
 
 
 def main() -> None:
