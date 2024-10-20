@@ -1,13 +1,11 @@
 import json
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import Any, Generator, Literal, TypeAlias
 
 import pydantic
 
-BitwardenJsonItems: TypeAlias = dict[
-    Literal["username"] | Literal["password"] | Literal["uris"], Any
-]
-BitwardenJsonExportFormat: TypeAlias = dict[str, BitwardenJsonItems | Any]
+BitwardenJsonItems: TypeAlias = dict[Literal["username"] | Literal["password"] | Literal["uris"], Any]
+BitwardenJsonExportFormat: TypeAlias = list[dict[Literal["login"] | Any, BitwardenJsonItems | Any]]
 
 
 class BitwardenItem(pydantic.BaseModel):
@@ -58,10 +56,9 @@ def parsed_bitwarden_item(item: BitwardenJsonItems) -> BitwardenItem:
     uris = item["uris"]
 
     if len(uris) == 0:
-        # print(f"Empty uris in {item} object")
         return BitwardenItem(uris=None, username=username, password=password)
 
-    only_uris = (item["uri"] for item in uris)
+    only_uris: Generator[str, None, None] = (item["uri"] for item in uris)
     uris_tupled: tuple = tuple(sorted(only_uris))
 
     return BitwardenItem(uris=uris_tupled, username=username, password=password)
@@ -98,23 +95,24 @@ def parse_raw_items(bw_export_items) -> list[BitwardenItem]:
     return parsed_items
 
 
-def main() -> None:
-    bw_export_file_items: BitwardenJsonExportFormat = (
-        get_latest_export_keys_from_bw_exports_folder()
-    )
-
-    parsed_items: list[BitwardenItem] = parse_raw_items(
-        bw_export_items=bw_export_file_items
-    )
-    unique: list[BitwardenItem]
-    repeated: list[BitwardenItem]
-    unique, repeated = get_unique_and_repeated(parsed_items=parsed_items)
+def print_results(unique: list[BitwardenItem], repeated: list[BitwardenItem]) -> None:
     print(f"Found {len(unique)} unique elements.")
     print(f"Found {len(repeated)} repeated elements.")
 
     print("The repeated elements are:")
     for item in repeated:
         print(item)
+
+
+def main() -> None:
+    bw_export_file_items: BitwardenJsonExportFormat = get_latest_export_keys_from_bw_exports_folder()
+
+    parsed_items: list[BitwardenItem] = parse_raw_items(bw_export_items=bw_export_file_items)
+    unique: list[BitwardenItem]
+    repeated: list[BitwardenItem]
+    unique, repeated = get_unique_and_repeated(parsed_items=parsed_items)
+
+    print_results(unique=unique, repeated=repeated)
 
 
 if __name__ == "__main__":
