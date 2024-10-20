@@ -4,10 +4,19 @@ version = "0.1.0"
 description = ""
 authors = ["Julian Merida <julianmr97@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
+pydantic = "^2.9.2"
+radon = "^6.0.1"
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+mypy = "^1.12.1"
+radon = "^6.0.1"
+bandit = "^1.7.10"
 
 [build-system]
 requires = ["poetry-core"]
